@@ -115,56 +115,32 @@ func parseInput(fileName string) (nums []int, err error) {
 
 func part1(nums []int) (int, error) {
 	// Search for the two numbers adding to 2020
-	var match0 int
-	var match1 int
-
 	for _, num0 := range nums {
 		for _, num1 := range nums {
 			sum := num0 + num1
 
 			if sum == magicNumber {
-				match0 = num0
-				match1 = num1
-				break
+				return num0 * num1, nil
 			}
 		}
 	}
 
-	// If we've found no matches, then these will be the zero value for ints
-	if match0 == 0 || match1 == 0 {
-		return 0, fmt.Errorf("no match found")
-	}
-
-	answer := match0 * match1
-	return answer, nil
+	return 0, fmt.Errorf("no match found")
 }
 
 func part2(nums []int) (int, error) {
 	// Search for THREE numbers adding to 2020
-	var match0 int
-	var match1 int
-	var match2 int
-
 	for _, num0 := range nums {
 		for _, num1 := range nums {
 			for _, num2 := range nums {
 				sum := num0 + num1 + num2
 
 				if sum == magicNumber {
-					match0 = num0
-					match1 = num1
-					match2 = num2
-					break
+					return num0 * num1 * num2, nil
 				}
 			}
 		}
 	}
 
-	// If we've found no matches, then these will be the zero value for ints
-	if match0 == 0 || match1 == 0 || match2 == 0 {
-		return 0, fmt.Errorf("no match found")
-	}
-
-	answer := match0 * match1 * match2
-	return answer, nil
+	return 0, fmt.Errorf("no match found")
 }
