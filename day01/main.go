@@ -41,18 +41,33 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 )
 
+var magicNumber = 2020
+
 func main() {
-	// Read the input file into a byte array
-	cwd, _ := os.Getwd()
-	data, err := ioutil.ReadFile(fmt.Sprintf("%s/day01/input.txt", cwd))
+	nums, err := parseInput("day01/input.txt")
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	answer1, err := part1(nums)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Part 1 answer: %v", answer1)
+}
+
+func parseInput(fileName string) (nums []int, err error) {
+	data, err := ioutil.ReadFile(fileName)
+
+	if err != nil {
+		return nums, err
 	}
 
 	// Convert the input into a string, split into a slice of lines as strings
@@ -60,7 +75,6 @@ func main() {
 	lines := strings.Split(input, "\n")
 
 	// Convert into a slice of ints
-	var nums []int
 	for _, line := range lines {
 		if line == "" {
 			continue
@@ -75,6 +89,10 @@ func main() {
 		nums = append(nums, num)
 	}
 
+	return nums, nil
+}
+
+func part1(nums []int) (int, error) {
 	// Search for the two numbers adding to 2020
 	var match0 int
 	var match1 int
@@ -83,7 +101,7 @@ func main() {
 		for _, num1 := range nums {
 			sum := num0 + num1
 
-			if sum == 2020 {
+			if sum == magicNumber {
 				match0 = num0
 				match1 = num1
 				break
@@ -93,10 +111,10 @@ func main() {
 
 	// If we've found no matches, then these will be the zero value for ints
 	if match0 == 0 || match1 == 0 {
-		log.Fatal("No matches found")
+		return 0, fmt.Errorf("no match found")
 	}
 
 	// Find the answer: 211899
 	answer := match0 * match1
-	fmt.Printf("%v", answer)
+	return answer, nil
 }
