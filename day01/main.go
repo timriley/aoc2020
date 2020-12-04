@@ -117,9 +117,7 @@ func part1(nums []int) (int, error) {
 	// Search for the two numbers adding to 2020
 	for _, num0 := range nums {
 		for _, num1 := range nums {
-			sum := num0 + num1
-
-			if sum == magicNumber {
+			if num0+num1 == magicNumber {
 				return num0 * num1, nil
 			}
 		}
@@ -133,9 +131,7 @@ func part2(nums []int) (int, error) {
 	for _, num0 := range nums {
 		for _, num1 := range nums {
 			for _, num2 := range nums {
-				sum := num0 + num1 + num2
-
-				if sum == magicNumber {
+				if num0+num1+num2 == magicNumber {
 					return num0 * num1 * num2, nil
 				}
 			}
