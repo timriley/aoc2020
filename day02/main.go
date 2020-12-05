@@ -52,7 +52,7 @@
 package main
 
 import (
-	"../utils/str"
+	"aoc2020/utils/str"
 	"fmt"
 	"io/ioutil"
 	"regexp"
