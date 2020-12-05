@@ -52,6 +52,7 @@
 package main
 
 import (
+	"../utils/str"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -165,8 +166,8 @@ func (e passwordEntry) passwordContainsCharacterEnoughTimes() bool {
 }
 
 func (e passwordEntry) passwordHasCharacterInSingularPosition() bool {
-	char0 := string(e.password[e.num0-1])
-	char1 := string(e.password[e.num1-1])
+	char0, err0 := str.CharAt(e.password, e.num0-1)
+	char1, err1 := str.CharAt(e.password, e.num1-1)
 
-	return (char0 == e.character || char1 == e.character) && (char0 != char1)
+	return err0 == nil && err1 == nil && (char0 == e.character) != (char1 == e.character)
 }
