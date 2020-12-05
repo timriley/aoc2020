@@ -62,6 +62,22 @@
 //
 // Starting at the top-left corner of your map and following a slope of right 3 and down 1, how many trees would you
 // encounter?
+//
+// --- Part Two ---
+//
+// Time to check the rest of the slopes - you need to minimize the probability of a sudden arboreal stop, after all.
+//
+// Determine the number of trees you would encounter if, for each of the following slopes, you start at the top-left
+// corner and traverse the map all the way to the bottom:
+//
+// Right 1, down 1.
+// Right 3, down 1. (This is the slope you already checked.)
+// Right 5, down 1.
+// Right 7, down 1.
+// Right 1, down 2.
+//
+// In the above example, these slopes would find 2, 7, 3, 4, and 2 tree(s) respectively; multiplied together, these
+// produce the answer 336.
 
 package main
 
@@ -81,16 +97,57 @@ func main() {
 		log.Fatal(err)
 	}
 
-	treesCount := part1(rows)
+	part1Trees := part1(rows)
+	part2Trees := part2(rows)
 
-	fmt.Printf("Encountered %v trees\nt", treesCount)
+	fmt.Printf("Part 1: %v trees\nt", part1Trees)
+	fmt.Printf("Part 2: %v trees\nt", part2Trees)
 }
 
 func part1(rows []Row) int {
-	treesCount := 0
+	return treesForTraversal(rows, 1, 3)
+}
 
-	downBy := 1
-	rightBy := 3
+func part2(rows []Row) int {
+	type TraverseBy struct {
+		downBy  int
+		rightBy int
+	}
+
+	traversals := []TraverseBy{
+		{
+			downBy:  1,
+			rightBy: 1,
+		},
+		{
+			downBy:  1,
+			rightBy: 3,
+		},
+		{
+			downBy:  1,
+			rightBy: 5,
+		},
+		{
+			downBy:  1,
+			rightBy: 7,
+		},
+		{
+			downBy:  2,
+			rightBy: 1,
+		},
+	}
+
+	m := 1
+
+	for _, t := range traversals {
+		m = m * treesForTraversal(rows, t.downBy, t.rightBy)
+	}
+
+	return m
+}
+
+func treesForTraversal(rows []Row, downBy int, rightBy int) int {
+	treesCount := 0
 
 	for x, y := 0, 0; x < len(rows); x, y = x+downBy, y+rightBy {
 		cell := rows[x].CellAt(y)
