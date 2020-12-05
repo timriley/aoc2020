@@ -109,38 +109,21 @@ func part1(rows []Row) int {
 }
 
 func part2(rows []Row) int {
-	type TraverseBy struct {
+	traversals := []struct {
 		downBy  int
 		rightBy int
-	}
-
-	traversals := []TraverseBy{
-		{
-			downBy:  1,
-			rightBy: 1,
-		},
-		{
-			downBy:  1,
-			rightBy: 3,
-		},
-		{
-			downBy:  1,
-			rightBy: 5,
-		},
-		{
-			downBy:  1,
-			rightBy: 7,
-		},
-		{
-			downBy:  2,
-			rightBy: 1,
-		},
+	}{
+		{1, 1},
+		{1, 3},
+		{1, 5},
+		{1, 7},
+		{2, 1},
 	}
 
 	m := 1
 
 	for _, t := range traversals {
-		m = m * treesForTraversal(rows, t.downBy, t.rightBy)
+		m *= treesForTraversal(rows, t.downBy, t.rightBy)
 	}
 
 	return m
