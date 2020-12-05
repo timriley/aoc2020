@@ -100,8 +100,8 @@ func main() {
 	part1Trees := part1(rows)
 	part2Trees := part2(rows)
 
-	fmt.Printf("Part 1: %v trees\nt", part1Trees)
-	fmt.Printf("Part 2: %v trees\nt", part2Trees)
+	fmt.Printf("Part 1: %v trees\n", part1Trees)
+	fmt.Printf("Part 2: %v trees\n", part2Trees)
 }
 
 func part1(rows []Row) int {
