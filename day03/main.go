@@ -161,12 +161,7 @@ func treesForTraversal(rows []Row, downBy int, rightBy int) int {
 }
 
 func (r Row) CellAt(index int) string {
-	if index < len(r) {
-		return r[index]
-	}
-
-	wrappedIndex := index % len(r)
-	return r[wrappedIndex]
+	return r[index%len(r)]
 }
 
 func parseInput(fileName string) ([]Row, error) {
