@@ -160,14 +160,7 @@ func parseEntry(line string) (map[string]string, bool) {
 }
 
 func (e passwordEntry) passwordContainsCharacterEnoughTimes() bool {
-	count := 0
-
-	for _, c := range e.password {
-		if string(c) == e.character {
-			count++
-		}
-	}
-
+	count := strings.Count(e.password, e.character)
 	return count >= e.num0 && count <= e.num1
 }
 
