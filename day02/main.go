@@ -55,14 +55,21 @@ var entryLineRegexp = regexp.MustCompile(`^(?P<minTimes>\d+)-(?P<maxTimes>\d+)\s
 func main() {
 	entries, _ := parseInput("day02/input.txt")
 
-	validCount := 0
+	validPasswordCount := part1(entries)
+
+	fmt.Printf("Valid password count: %v", validPasswordCount)
+}
+
+func part1(entries []passwordEntry) int {
+	count := 0
+
 	for _, e := range entries {
 		if e.isPasswordValid() {
-			validCount++
+			count++
 		}
 	}
 
-	fmt.Printf("Valid password count: %v", validCount)
+	return count
 }
 
 func parseInput(fileName string) (entries []passwordEntry, err error) {
