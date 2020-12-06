@@ -55,25 +55,191 @@
 //
 // Count the number of valid passports - those that have all required fields. Treat cid as optional. In your batch file,
 // how many passports are valid?
+//
+// --- Part Two ---
+//
+// The line is moving more quickly now, but you overhear airport security talking about how passports with invalid data
+// are getting through. Better add some data validation, quick!
+//
+// You can continue to ignore the cid field, but each other field has strict rules about what values are valid for
+// automatic validation:
+//
+// byr (Birth Year) - four digits; at least 1920 and at most 2002.
+// iyr (Issue Year) - four digits; at least 2010 and at most 2020.
+// eyr (Expiration Year) - four digits; at least 2020 and at most 2030.
+// hgt (Height) - a number followed by either cm or in:
+// If cm, the number must be at least 150 and at most 193.
+// If in, the number must be at least 59 and at most 76.
+// hcl (Hair Color) - a # followed by exactly six characters 0-9 or a-f.
+// ecl (Eye Color) - exactly one of: amb blu brn gry grn hzl oth.
+// pid (Passport ID) - a nine-digit number, including leading zeroes.
+// cid (Country ID) - ignored, missing or not.
+//
+// Your job is to count the passports where all required fields are both present and valid according to the above rules.
+// Here are some example values:
+//
+// byr valid:   2002
+// byr invalid: 2003
+//
+// hgt valid:   60in
+// hgt valid:   190cm
+// hgt invalid: 190in
+// hgt invalid: 190
+//
+// hcl valid:   #123abc
+// hcl invalid: #123abz
+// hcl invalid: 123abc
+//
+// ecl valid:   brn
+// ecl invalid: wat
+//
+// pid valid:   000000001
+// pid invalid: 0123456789
+// Here are some invalid passports:
+//
+// eyr:1972 cid:100
+// hcl:#18171d ecl:amb hgt:170 pid:186cm iyr:2018 byr:1926
+//
+// iyr:2019
+// hcl:#602927 eyr:1967 hgt:170cm
+// ecl:grn pid:012533040 byr:1946
+//
+// hcl:dab227 iyr:2012
+// ecl:brn hgt:182cm pid:021572410 eyr:2020 byr:1992 cid:277
+//
+// hgt:59cm ecl:zzz
+// eyr:2038 hcl:74454a iyr:2023
+// pid:3556412378 byr:2007
+//
+// Here are some valid passports:
+//
+// pid:087499704 hgt:74in ecl:grn iyr:2012 eyr:2030 byr:1980
+// hcl:#623a2f
+//
+// eyr:2029 ecl:blu cid:129 byr:1989
+// iyr:2014 pid:896056539 hcl:#a97842 hgt:165cm
+//
+// hcl:#888785
+// hgt:164cm byr:2001 iyr:2015 cid:88
+// pid:545766238 ecl:hzl
+// eyr:2022
+//
+// iyr:2010 hgt:158cm hcl:#b6652a ecl:blu byr:1944 eyr:2021 pid:093154719
+//
+// Count the number of valid passports - those that have all required fields and valid values. Continue to treat cid as
+// optional. In your batch file, how many passports are valid?
 
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
-// cid (Country ID) is not required
-var requiredFields = []string{
-	"byr", // Birth Year
-	"iyr", // Issue Year
-	"eyr", // Expiration Year
-	"hgt", // Height
-	"hcl", // Hair Color
-	"ecl", // Eye Color
-	"pid", // Passport ID
+type CredentialField struct {
+	required   bool
+	validation func(string) bool
+}
+
+var credentialFields = map[string]CredentialField{
+	"byr": {
+		true,
+		func(s string) bool {
+			year, err := yearStringToI(s)
+			return err != nil && year >= 1920 && year <= 2002
+		},
+	},
+	"iyr": {
+		true,
+		func(s string) bool {
+			year, err := yearStringToI(s)
+			return err != nil && year >= 2010 && year <= 2020
+		},
+	},
+	"eyr": {
+		true,
+		func(s string) bool {
+			year, err := yearStringToI(s)
+			return err != nil && year >= 2020 && year <= 2030
+		},
+	},
+	"hgt": {
+		true,
+		func(s string) bool {
+			re := regexp.MustCompile(`^(?P<num>\d+)(<?P<unit>cm|in)`)
+
+			if !re.MatchString(s) {
+				return false
+			}
+
+			match := re.FindStringSubmatch(s)
+
+			captures := make(map[string]string)
+
+			for i, val := range match {
+				name := re.SubexpNames()[i]
+				captures[name] = val
+			}
+
+			num, err := strconv.Atoi(captures["num"])
+
+			if err != nil {
+				return false
+			}
+
+			if captures["unit"] == "cm" {
+				return num >= 150 && num <= 193
+			}
+
+			if captures["unit"] == "in" {
+				return num >= 59 && num <= 76
+			}
+
+			return false
+		},
+	},
+	"hcl": {
+		true,
+		func(s string) bool {
+			re := regexp.MustCompile(`^#[0-9a-f]{6}$`)
+			return re.MatchString(s)
+		},
+	},
+	"ecl": {
+		true,
+		func(s string) bool {
+			re := regexp.MustCompile(`^(amb|blu|brn|gry|grn|hzl|oth)$`)
+			return re.MatchString(s)
+		},
+	},
+	"pid": {
+		true,
+		func(s string) bool {
+			re := regexp.MustCompile(`^[0-9]{9}$`)
+			return re.MatchString(s)
+		},
+	},
+	"cid": {
+		false,
+		func(s string) bool {
+			return true
+		},
+	},
+}
+
+func yearStringToI(s string) (int, error) {
+	re := regexp.MustCompile(`^\d{4}$`)
+
+	if !re.MatchString(s) {
+		return 0, errors.New("must be four digits")
+	}
+
+	return strconv.Atoi(s)
 }
 
 type Credential []string
@@ -103,15 +269,13 @@ func part1(credentials []Credential) int {
 }
 
 func (cred Credential) isValid() bool {
-	// Ordinarily I'd reach for a simple array union here, between the required fields and the fields in the credential.
-	// If the union equals the required fields, then all fields are present and the credential is valid.
-	//
-	// However, that doesn't feel like the "Go way," so instead, build up a simple O(n^2) set of loops, first over the
-	// required fields, then for each required field, loop over the credential's fields, breaking early if a match is
-	// found, or early returning false if no match is found.
-	for _, reqField := range requiredFields {
-		for i, field := range cred {
-			if reqField == field {
+	for key, field := range credentialFields {
+		if !field.required {
+			continue
+		}
+
+		for i, credField := range cred {
+			if credField == key {
 				break
 			}
 
