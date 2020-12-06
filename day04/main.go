@@ -141,6 +141,8 @@ import (
 	"strings"
 )
 
+type Credential map[string]string
+
 type CredentialField struct {
 	required   bool
 	validation func(string) bool
@@ -151,27 +153,27 @@ var credentialFields = map[string]CredentialField{
 		true,
 		func(s string) bool {
 			year, err := yearStringToI(s)
-			return err != nil && year >= 1920 && year <= 2002
+			return err == nil && year >= 1920 && year <= 2002
 		},
 	},
 	"iyr": {
 		true,
 		func(s string) bool {
 			year, err := yearStringToI(s)
-			return err != nil && year >= 2010 && year <= 2020
+			return err == nil && year >= 2010 && year <= 2020
 		},
 	},
 	"eyr": {
 		true,
 		func(s string) bool {
 			year, err := yearStringToI(s)
-			return err != nil && year >= 2020 && year <= 2030
+			return err == nil && year >= 2020 && year <= 2030
 		},
 	},
 	"hgt": {
 		true,
 		func(s string) bool {
-			re := regexp.MustCompile(`^(?P<num>\d+)(<?P<unit>cm|in)`)
+			re := regexp.MustCompile(`^(?P<num>\d+)(?P<unit>cm|in)$`)
 
 			if !re.MatchString(s) {
 				return false
@@ -232,18 +234,6 @@ var credentialFields = map[string]CredentialField{
 	},
 }
 
-func yearStringToI(s string) (int, error) {
-	re := regexp.MustCompile(`^\d{4}$`)
-
-	if !re.MatchString(s) {
-		return 0, errors.New("must be four digits")
-	}
-
-	return strconv.Atoi(s)
-}
-
-type Credential []string
-
 func main() {
 	credentials, err := parseInputFile("day04/input.txt")
 
@@ -251,16 +241,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	validCount := part1(credentials)
+	validCountPart1 := part1(credentials)
+	validCountPart2 := part2(credentials)
 
-	fmt.Printf("Valid credentials: %v", validCount)
+	fmt.Printf("Valid credentials (part 1): %v\n", validCountPart1)
+	fmt.Printf("Valid credentials (part 2): %v\n", validCountPart2)
 }
 
 func part1(credentials []Credential) int {
 	validCount := 0
 
 	for _, credential := range credentials {
-		if credential.isValid() {
+		if credential.isValidForPart1() {
 			validCount++
 		}
 	}
@@ -268,20 +260,52 @@ func part1(credentials []Credential) int {
 	return validCount
 }
 
-func (cred Credential) isValid() bool {
-	for key, field := range credentialFields {
+func part2(credentials []Credential) int {
+	validCount := 0
+
+	for _, credential := range credentials {
+		if credential.isValidForPart2() {
+			validCount++
+		}
+	}
+
+	return validCount
+}
+
+func (cred Credential) isValidForPart1() bool {
+	requiredFieldsCount := 0
+	credFieldsCount := 0
+
+	for fieldKey, field := range credentialFields {
 		if !field.required {
 			continue
 		}
 
-		for i, credField := range cred {
-			if credField == key {
+		requiredFieldsCount += 1
+
+		for credKey, _ := range cred {
+			if credKey == fieldKey {
+				credFieldsCount += 1
 				break
 			}
+		}
+	}
 
-			if i == len(cred)-1 {
-				return false
-			}
+	return requiredFieldsCount == credFieldsCount
+}
+
+func (cred Credential) isValidForPart2() bool {
+	for fieldKey, field := range credentialFields {
+		if !field.required {
+			continue
+		}
+
+		credValue := cred[fieldKey]
+
+		valid := field.validation(credValue)
+
+		if !valid {
+			return false
 		}
 	}
 
@@ -304,19 +328,34 @@ func parseInputFile(fileName string) ([]Credential, error) {
 			continue
 		}
 
-		record = strings.ReplaceAll(record, "\n", " ")
+		record = strings.TrimSpace(strings.ReplaceAll(record, "\n", " "))
 
 		fieldStrings := strings.Split(record, " ")
 
-		var credential Credential
+		credential := make(Credential)
 
 		for _, fieldString := range fieldStrings {
 			parts := strings.Split(fieldString, ":")
-			credential = append(credential, parts[0])
+
+			if len(parts) == 0 {
+				continue
+			}
+
+			credential[parts[0]] = parts[1]
 		}
 
 		credentials = append(credentials, credential)
 	}
 
 	return credentials, nil
+}
+
+func yearStringToI(s string) (int, error) {
+	re := regexp.MustCompile(`^\d{4}$`)
+
+	if !re.MatchString(s) {
+		return 0, errors.New("must be four digits")
+	}
+
+	return strconv.Atoi(s)
 }
