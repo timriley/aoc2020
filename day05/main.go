@@ -62,8 +62,10 @@ import (
 type BoardingPass string
 
 func main() {
-	boardingPasses, err := fileinput.Load("day05/input.txt", "\n", func(s string) (interface{}, error) {
-		return BoardingPass(s), nil
+	var boardingPasses []BoardingPass
+
+	err := fileinput.LoadThen("day05/input.txt", "\n", func(s string) {
+		boardingPasses = append(boardingPasses, BoardingPass(s))
 	})
 
 	if err != nil {
@@ -71,5 +73,10 @@ func main() {
 	}
 
 	firstPass := boardingPasses[0]
-	fmt.Printf("%t", firstPass)
+	fmt.Printf("%t\n", firstPass)
+	fmt.Println(firstPass.hello())
+}
+
+func (bp BoardingPass) hello() string {
+	return "hello"
 }
