@@ -101,13 +101,7 @@ func part1(passes []BoardingPass) int {
 	highestPassID := 0
 
 	for _, pass := range passes {
-		details, err := pass.seatDetails()
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		passID := details[2]
+		passID := pass.seatDetails()[2]
 
 		if passID > highestPassID {
 			highestPassID = passID
@@ -119,17 +113,9 @@ func part1(passes []BoardingPass) int {
 
 func part2(passes []BoardingPass) int {
 	var seatIDs []int
-
 	for _, pass := range passes {
-		details, err := pass.seatDetails()
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		seatIDs = append(seatIDs, details[2])
+		seatIDs = append(seatIDs, pass.seatDetails()[2])
 	}
-
 	sort.Ints(seatIDs)
 
 	for i, prevID := 1, seatIDs[0]; i < len(seatIDs)-1; i++ {
@@ -145,12 +131,12 @@ func part2(passes []BoardingPass) int {
 	return -1
 }
 
-func (bp BoardingPass) seatDetails() ([3]int, error) {
+func (bp BoardingPass) seatDetails() [3]int {
 	row := search(string(bp)[:7], 0, 127, "B")
 	col := search(string(bp)[7:], 0, 7, "R")
 	id := seatID(row, col)
 
-	return [...]int{row, col, id}, nil
+	return [...]int{row, col, id}
 }
 
 func search(instructions string, low int, high int, highInstruction string) int {
