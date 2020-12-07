@@ -190,7 +190,3 @@ func (bp BoardingPass) seatDetails() ([3]int, error) {
 
 	return [...]int{minRow, minCol, (minRow * 8) + minCol}, nil
 }
-
-func (bp BoardingPass) hello() string {
-	return "hello"
-}
