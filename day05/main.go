@@ -67,7 +67,6 @@ package main
 
 import (
 	"aoc2020/utils/fileinput"
-	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -143,50 +142,31 @@ func part2(passes []BoardingPass) int {
 		prevID = thisID
 	}
 
-	log.Fatalf("seat could not be found")
-	return 0
+	return -1
 }
 
 func (bp BoardingPass) seatDetails() ([3]int, error) {
-	runes := []rune(bp)
+	row := search(string(bp)[:7], 0, 127, "B")
+	col := search(string(bp)[7:], 0, 7, "R")
+	id := seatID(row, col)
 
-	minRow := 0
-	maxRow := totalRows - 1
+	return [...]int{row, col, id}, nil
+}
 
-	for i := 0; i <= 6; i++ {
-		instruction := string(runes[i])
+func search(instructions string, low int, high int, highInstruction string) int {
+	var found int
 
-		if instruction == "F" {
-			maxRow -= (maxRow-minRow)/2 + 1
-		}
-
-		if instruction == "B" {
-			minRow += (maxRow-minRow)/2 + 1
-		}
-	}
-
-	if minRow != maxRow {
-		return [3]int{}, errors.New("could not resolve row position")
-	}
-
-	minCol := 0
-	maxCol := totalCols - 1
-
-	for i := 7; i <= 9; i++ {
-		instruction := string(runes[i])
-
-		if instruction == "L" {
-			maxCol -= (maxCol-minCol)/2 + 1
-		}
-
-		if instruction == "R" {
-			minCol += (maxCol-minCol)/2 + 1
+	for _, instruction := range instructions {
+		if string(instruction) == highInstruction {
+			low, found = low+((high-low)/2+1), high
+		} else {
+			high, found = high-((high-low)/2+1), low
 		}
 	}
 
-	if minCol != maxCol {
-		return [3]int{}, errors.New("could not resolve col position")
-	}
+	return found
+}
 
-	return [...]int{minRow, minCol, (minRow * 8) + minCol}, nil
+func seatID(row int, col int) int {
+	return (row * 8) + col
 }
