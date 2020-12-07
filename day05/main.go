@@ -50,6 +50,18 @@
 // BBFFBBFRLL: row 102, column 4, seat ID 820.
 //
 // As a sanity check, look through your list of boarding passes. What is the highest seat ID on a boarding pass?
+//
+// --- Part Two ---
+//
+// Ding! The "fasten seat belt" signs have turned on. Time to find your seat.
+//
+// It's a completely full flight, so your seat should be the only missing boarding pass in your list. However, there's a
+// catch: some of the seats at the very front and back of the plane don't exist on this aircraft, so they'll be missing
+// from your list as well.
+//
+// Your seat wasn't at the very front or back, though; the seats with IDs +1 and -1 from yours will be in your list.
+//
+// What is the ID of your seat?
 
 package main
 
@@ -59,6 +71,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"sort"
 )
 
 type BoardingPass string
@@ -79,9 +92,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	highestPassIDpart1 := part1(boardingPasses)
+	highestPassID := part1(boardingPasses)
+	mySeatID := part2(boardingPasses)
 
-	fmt.Printf("Highest pass ID (part 1): %v", highestPassIDpart1)
+	fmt.Printf("Highest pass ID (part 1): %v\n", highestPassID)
+	fmt.Printf("My seat ID (part 2): %v\n", mySeatID)
 }
 
 func part1(passes []BoardingPass) int {
@@ -102,6 +117,35 @@ func part1(passes []BoardingPass) int {
 	}
 
 	return highestPassID
+}
+
+func part2(passes []BoardingPass) int {
+	var seatIDs []int
+
+	for _, pass := range passes {
+		details, err := pass.seatDetails()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		seatIDs = append(seatIDs, details[2])
+	}
+
+	sort.Ints(seatIDs)
+
+	for i, prevID := 1, seatIDs[0]; i < len(seatIDs)-1; i++ {
+		thisID := seatIDs[i]
+
+		if thisID-prevID > 1 {
+			return thisID - 1
+		}
+
+		prevID = thisID
+	}
+
+	log.Fatalf("seat could not be found")
+	return 0
 }
 
 func (bp BoardingPass) seatDetails() ([3]int, error) {
