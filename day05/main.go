@@ -70,7 +70,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"sort"
 )
 
@@ -158,11 +157,11 @@ func (bp BoardingPass) seatDetails() ([3]int, error) {
 		instruction := string(runes[i])
 
 		if instruction == "F" {
-			maxRow -= int(math.Ceil(float64(maxRow-minRow) / float64(2)))
+			maxRow -= (maxRow-minRow)/2 + 1
 		}
 
 		if instruction == "B" {
-			minRow += int(math.Ceil(float64(maxRow-minRow) / float64(2)))
+			minRow += (maxRow-minRow)/2 + 1
 		}
 	}
 
@@ -177,11 +176,11 @@ func (bp BoardingPass) seatDetails() ([3]int, error) {
 		instruction := string(runes[i])
 
 		if instruction == "L" {
-			maxCol -= int(math.Ceil(float64(maxCol-minCol) / float64(2)))
+			maxCol -= (maxCol-minCol)/2 + 1
 		}
 
 		if instruction == "R" {
-			minCol += int(math.Ceil(float64(maxCol-minCol) / float64(2)))
+			minCol += (maxCol-minCol)/2 + 1
 		}
 	}
 
