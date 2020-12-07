@@ -132,8 +132,8 @@ func part2(passes []BoardingPass) int {
 }
 
 func (bp BoardingPass) seatDetails() [3]int {
-	row := search(string(bp)[:7], 0, 127, "B")
-	col := search(string(bp)[7:], 0, 7, "R")
+	row := search(string(bp)[:7], 0, totalRows-1, "B")
+	col := search(string(bp)[7:], 0, totalCols-1, "R")
 	id := seatID(row, col)
 
 	return [...]int{row, col, id}
