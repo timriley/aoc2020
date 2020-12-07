@@ -55,11 +55,18 @@ package main
 
 import (
 	"aoc2020/utils/fileinput"
+	"errors"
 	"fmt"
 	"log"
+	"math"
 )
 
 type BoardingPass string
+
+var (
+	totalRows = 128
+	totalCols = 8
+)
 
 func main() {
 	var boardingPasses []BoardingPass
@@ -72,9 +79,73 @@ func main() {
 		log.Fatal(err)
 	}
 
-	firstPass := boardingPasses[0]
-	fmt.Printf("%t\n", firstPass)
-	fmt.Println(firstPass.hello())
+	highestPassIDpart1 := part1(boardingPasses)
+
+	fmt.Printf("Highest pass ID (part 1): %v", highestPassIDpart1)
+}
+
+func part1(passes []BoardingPass) int {
+	highestPassID := 0
+
+	for _, pass := range passes {
+		details, err := pass.seatDetails()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		passID := details[2]
+
+		if passID > highestPassID {
+			highestPassID = passID
+		}
+	}
+
+	return highestPassID
+}
+
+func (bp BoardingPass) seatDetails() ([3]int, error) {
+	runes := []rune(bp)
+
+	minRow := 0
+	maxRow := totalRows - 1
+
+	for i := 0; i <= 6; i++ {
+		instruction := string(runes[i])
+
+		if instruction == "F" {
+			maxRow -= int(math.Ceil(float64(maxRow-minRow) / float64(2)))
+		}
+
+		if instruction == "B" {
+			minRow += int(math.Ceil(float64(maxRow-minRow) / float64(2)))
+		}
+	}
+
+	if minRow != maxRow {
+		return [3]int{}, errors.New("could not resolve row position")
+	}
+
+	minCol := 0
+	maxCol := totalCols - 1
+
+	for i := 7; i <= 9; i++ {
+		instruction := string(runes[i])
+
+		if instruction == "L" {
+			maxCol -= int(math.Ceil(float64(maxCol-minCol) / float64(2)))
+		}
+
+		if instruction == "R" {
+			minCol += int(math.Ceil(float64(maxCol-minCol) / float64(2)))
+		}
+	}
+
+	if minCol != maxCol {
+		return [3]int{}, errors.New("could not resolve col position")
+	}
+
+	return [...]int{minRow, minCol, (minRow * 8) + minCol}, nil
 }
 
 func (bp BoardingPass) hello() string {
