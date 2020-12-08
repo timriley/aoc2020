@@ -19,7 +19,7 @@ func LoadThen(fileName string, separator string, handler func(s string)) error {
 			continue
 		}
 
-		handler(record)
+		handler(strings.TrimSpace(record))
 	}
 
 	return nil
