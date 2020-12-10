@@ -89,27 +89,34 @@ import (
 	"strings"
 )
 
-type Rule struct {
-	parent    string
-	contained []Contained
+type rule struct {
+	descriptor string
+	contained  []contained
 }
 
-type Contained struct {
+type contained struct {
 	descriptor string
 	quantity   int
 }
 
-type Graph struct {
-	Vertices map[string]*Vertex
+type graph struct {
+	nodes map[string]*node
 }
 
-type Vertex struct {
-	Key      string
-	Vertices map[string]*Vertex
+type node struct {
+	key         string
+	parentEdges []*edge
+	childEdges  []*edge
+}
+
+type edge struct {
+	parent *node
+	child  *node
+	weight int
 }
 
 func main() {
-	var rules []Rule
+	var rules []rule
 	err := fileinput.LoadThen("day07/input.txt", "\n", func(s string) {
 		rules = append(rules, ruleFromString(s))
 	})
@@ -117,100 +124,88 @@ func main() {
 		log.Fatal(err)
 	}
 
-	numberContainingShinyGold := part1(rules)
-
-	fmt.Printf("Number of bags that can contain a shiny gold bag (part 1): %v\n", numberContainingShinyGold)
-}
-
-func part1(rules []Rule) int {
-	// Populate graph in direction of contained->container
 	g := newGraph()
 	for _, rule := range rules {
-		g.AddVertex(rule.parent)
 		for _, c := range rule.contained {
-			g.AddVertex(c.descriptor)
-			g.AddEdge(c.descriptor, rule.parent)
+			g.addEdge(rule.descriptor, c.descriptor, c.quantity)
 		}
 	}
 
-	startBag := "shiny gold"
-	containers := map[string]bool{}
-	g.Traverse(g.Vertices[startBag], func(bagType string) {
-		if bagType == startBag {
-			return
+	numberContainingShinyGold := part1(g)
+	numberContainedByShinyGold := part2(g)
+
+	fmt.Printf("Number of bags that can contain a shiny gold bag (part 1): %v\n", numberContainingShinyGold)
+	fmt.Printf("Number of bags contained by shiny gold bag (part 2): %v\n", numberContainedByShinyGold)
+}
+
+func part1(g *graph) int {
+	return len(g.allAscendants(g.nodes["shiny gold"]))
+}
+
+func part2(g *graph) int {
+	return g.combinedChildrenWeight(g.nodes["shiny gold"])
+}
+
+func newGraph() *graph {
+	return &graph{
+		nodes: map[string]*node{},
+	}
+}
+
+func (g *graph) addNode(key string) *node {
+	if existing, ok := g.nodes[key]; ok {
+		return existing
+	}
+
+	node := &node{key: key}
+	g.nodes[key] = node
+	return node
+}
+
+func (g *graph) addEdge(parentKey, childKey string, weight int) {
+	parent, ok := g.nodes[parentKey]
+	if !ok {
+		parent = g.addNode(parentKey)
+	}
+
+	child, ok := g.nodes[childKey]
+	if !ok {
+		child = g.addNode(childKey)
+	}
+
+	edge := &edge{parent: parent, child: child, weight: weight}
+	parent.childEdges = append(parent.childEdges, edge)
+	child.parentEdges = append(child.parentEdges, edge)
+}
+
+func (g *graph) allAscendants(n *node) []*node {
+	set := make(map[*node]bool)
+
+	for _, pe := range n.parentEdges {
+		set[pe.parent] = true
+
+		for _, pn := range g.allAscendants(pe.parent) {
+			set[pn] = true
 		}
-		containers[bagType] = true
-	})
-
-	return len(containers)
-}
-
-func part2(rules []Rule) int {
-	return 0
-}
-
-func newGraph() *Graph {
-	return &Graph{
-		Vertices: map[string]*Vertex{},
-	}
-}
-
-func newVertex(key string) *Vertex {
-	return &Vertex{
-		Key:      key,
-		Vertices: map[string]*Vertex{},
-	}
-}
-
-func (g *Graph) AddVertex(key string) {
-	if _, ok := g.Vertices[key]; ok {
-		return
 	}
 
-	v := newVertex(key)
-	g.Vertices[key] = v
+	nodes := make([]*node, 0, len(set))
+	for k := range set {
+		nodes = append(nodes, k)
+	}
+	return nodes
 }
 
-func (g *Graph) AddEdge(k1, k2 string) {
-	v1 := g.Vertices[k1]
-	v2 := g.Vertices[k2]
-
-	if v1 == nil || v2 == nil {
-		panic("vertices do not exist")
+func (g *graph) combinedChildrenWeight(n *node) int {
+	weight := 0
+	for _, ce := range n.childEdges {
+		weight += ce.weight                                      // contains n bags directly
+		weight += ce.weight * g.combinedChildrenWeight(ce.child) // weight of all combined children
 	}
-
-	// Do nothing if vertices are already connected
-	if _, ok := v1.Vertices[v2.Key]; ok {
-		return
-	}
-
-	v1.Vertices[v2.Key] = v2
-
-	g.Vertices[v1.Key] = v1
-	g.Vertices[v2.Key] = v2
+	return weight
 }
 
-// Traverse is a depth-first traversal implementation
-func (g *Graph) Traverse(start *Vertex, visitor func(string)) {
-	if start == nil {
-		return
-	}
-
-	visited := map[string]bool{}
-
-	visited[start.Key] = true
-	visitor(start.Key)
-
-	for _, v := range start.Vertices {
-		if visited[v.Key] {
-			continue
-		}
-
-		g.Traverse(v, visitor)
-	}
-}
-
-func ruleFromString(s string) Rule {
+func ruleFromString(s string) rule {
 	// Example: "striped fuchsia bags contain 3 dotted green bags, 2 plaid maroon bags."
 
 	// Strip spurious detail: the word "bag"/"bags" and trailing "."
@@ -221,7 +216,7 @@ func ruleFromString(s string) Rule {
 		log.Fatalf("expected only 2 parts in %v", parts)
 	}
 
-	var contained []Contained
+	var c []contained
 	for _, s := range strings.Split(parts[1], ", ") {
 		if s == "no other" {
 			continue
@@ -239,14 +234,14 @@ func ruleFromString(s string) Rule {
 
 		descriptor := strings.Join(parts[1:], " ")
 
-		contained = append(contained, Contained{
+		c = append(c, contained{
 			quantity:   qty,
 			descriptor: descriptor,
 		})
 	}
 
-	return Rule{
-		parent:    parts[0],
-		contained: contained,
+	return rule{
+		descriptor: parts[0],
+		contained:  c,
 	}
 }
