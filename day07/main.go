@@ -43,6 +43,40 @@
 //
 // How many bag colors can eventually contain at least one shiny gold bag? (The
 // list of rules is quite long; make sure you get all of it.)
+//
+// --- Part Two ---
+//
+// It's getting pretty expensive to fly these days - not because of ticket
+// prices, but because of the ridiculous number of bags you need to buy!
+//
+// Consider again your shiny gold bag and the rules from the above example:
+//
+// - faded blue bags contain 0 other bags.
+// - dotted black bags contain 0 other bags.
+// - vibrant plum bags contain 11 other bags: 5 faded blue bags and 6 dotted black bags.
+// - dark olive bags contain 7 other bags: 3 faded blue bags and 4 dotted black bags.
+//
+// So, a single shiny gold bag must contain 1 dark olive bag (and the 7 bags
+// within it) plus 2 vibrant plum bags (and the 11 bags within each of those): 1
+// + 1*7 + 2 + 2*11 = 32 bags!
+//
+// Of course, the actual rules have a small chance of going several levels
+// deeper than this example; be sure to count all of the bags, even if the
+// nesting becomes topologically impractical!
+//
+// Here's another example:
+//
+// - shiny gold bags contain 2 dark red bags.
+// - dark red bags contain 2 dark orange bags.
+// - dark orange bags contain 2 dark yellow bags.
+// - dark yellow bags contain 2 dark green bags.
+// - dark green bags contain 2 dark blue bags.
+// - dark blue bags contain 2 dark violet bags.
+// - dark violet bags contain no other bags.
+//
+// In this example, a single shiny gold bag must contain 126 other bags.
+//
+// How many individual bags are required inside your single shiny gold bag?
 
 package main
 
@@ -51,12 +85,18 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 type Rule struct {
-	parent   string
-	children []string
+	parent    string
+	contained []Contained
+}
+
+type Contained struct {
+	descriptor string
+	quantity   int
 }
 
 type Graph struct {
@@ -87,9 +127,9 @@ func part1(rules []Rule) int {
 	g := newGraph()
 	for _, rule := range rules {
 		g.AddVertex(rule.parent)
-		for _, c := range rule.children {
-			g.AddVertex(c)
-			g.AddEdge(c, rule.parent)
+		for _, c := range rule.contained {
+			g.AddVertex(c.descriptor)
+			g.AddEdge(c.descriptor, rule.parent)
 		}
 	}
 
@@ -103,6 +143,10 @@ func part1(rules []Rule) int {
 	})
 
 	return len(containers)
+}
+
+func part2(rules []Rule) int {
+	return 0
 }
 
 func newGraph() *Graph {
@@ -177,15 +221,32 @@ func ruleFromString(s string) Rule {
 		log.Fatalf("expected only 2 parts in %v", parts)
 	}
 
-	// Ignore quantities for now, since we don't need them
-	var children []string
+	var contained []Contained
 	for _, s := range strings.Split(parts[1], ", ") {
-		s = regexp.MustCompile(`\d+\s+`).ReplaceAllLiteralString(s, "")
-		children = append(children, s)
+		if s == "no other" {
+			continue
+		}
+
+		parts := strings.Split(s, " ")
+		if len(parts) != 3 {
+			log.Fatalf("expected only 3 parts in %v", parts)
+		}
+
+		qty, err := strconv.Atoi(parts[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		descriptor := strings.Join(parts[1:], " ")
+
+		contained = append(contained, Contained{
+			quantity:   qty,
+			descriptor: descriptor,
+		})
 	}
 
 	return Rule{
-		parent:   parts[0],
-		children: children,
+		parent:    parts[0],
+		contained: contained,
 	}
 }
