@@ -66,41 +66,129 @@
 //
 // Run your copy of the boot code. Immediately before any instruction is
 // executed a second time, what value is in the accumulator?
+//
+// --- Part Two ---
+//
+// After some careful analysis, you believe that exactly one instruction is
+// corrupted.
+//
+// Somewhere in the program, either a jmp is supposed to be a nop, or a nop is
+// supposed to be a jmp. (No acc instructions were harmed in the corruption of
+// this boot code.)
+//
+// The program is supposed to terminate by attempting to execute an instruction
+// immediately after the last instruction in the file. By changing exactly one
+// jmp or nop, you can repair the boot code and make it terminate correctly.
+//
+// For example, consider the same program from above:
+//
+// nop +0
+// acc +1
+// jmp +4
+// acc +3
+// jmp -3
+// acc -99
+// acc +1
+// jmp -4
+// acc +6
+//
+// If you change the first instruction from nop +0 to jmp +0, it would create a
+// single-instruction infinite loop, never leaving that instruction. If you
+// change almost any of the jmp instructions, the program will still eventually
+// find another jmp instruction and loop forever.
+//
+// However, if you change the second-to-last instruction (from jmp -4 to nop
+// -4), the program terminates! The instructions are visited in this order:
+//
+// nop +0  | 1
+// acc +1  | 2
+// jmp +4  | 3
+// acc +3  |
+// jmp -3  |
+// acc -99 |
+// acc +1  | 4
+// nop -4  | 5
+// acc +6  | 6
+//
+// After the last instruction (acc +6), the program terminates by attempting to
+// run the instruction below the last instruction in the file. With this change,
+// after the program terminates, the accumulator contains the value 8 (acc +1,
+// acc +1, acc +6).
+//
+// Fix the program so that it terminates normally by changing exactly one jmp
+// (to nop) or nop (to jmp). What is the value of the accumulator after the
+// program terminates?
 
 package main
 
 import (
 	"aoc2020/utils/fileinput"
 	"fmt"
+	"github.com/jinzhu/copier"
 	"log"
 	"strconv"
 	"strings"
 )
 
 type instruction struct {
-	// line int
 	op  string
 	arg int
 }
 
 func main() {
 	var ins []*instruction
-	// line := 1
 	err := fileinput.LoadThen("day08/input.txt", "\n", func(s string) {
-		// ins = append(ins, instructionFromString(line, s))
 		ins = append(ins, instructionFromString(s))
-		// line++
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	accumulatorBeforeRepeatedInstruction := part1(ins)
+	accumulatorAfterFixedInstructions := part2(ins)
 
-	fmt.Printf("Accumulator before repeated instruction (part 1): %v", accumulatorBeforeRepeatedInstruction)
+	fmt.Printf("Accumulator before repeated instruction (part 1): %v\n", accumulatorBeforeRepeatedInstruction)
+	fmt.Printf("Accumulator after fixed instructions (part 2): %v\n", accumulatorAfterFixedInstructions)
 }
 
 func part1(ins []*instruction) int {
+	acc, _ := executeInstructions(ins)
+	return acc
+}
+
+func part2(ins []*instruction) int {
+	for idx, in := range ins {
+		if in.op == "jmp" || in.op == "nop" {
+			newIns := make([]*instruction, len(ins))
+			copy(newIns, ins)
+
+			newIn := &instruction{}
+			err := copier.Copy(newIn, in)
+			if err != nil {
+				log.Fatalf("failed to copy instruction %v", in)
+			}
+
+			if in.op == "jmp" {
+				newIn.op = "nop"
+			} else {
+				newIn.op = "jmp"
+			}
+
+			//goland:noinspection GoNilness
+			newIns[idx] = newIn
+
+			acc, completed := executeInstructions(newIns)
+
+			if completed {
+				return acc
+			}
+		}
+	}
+
+	panic("could not fix instructions")
+}
+
+func executeInstructions(ins []*instruction) (finalAcc int, completed bool) {
 	acc := 0
 	called := map[int]int{}
 	i := 0
@@ -109,7 +197,11 @@ func part1(ins []*instruction) int {
 		called[i]++
 
 		if called[i] > 1 {
-			return acc
+			return acc, false
+		}
+
+		if i >= len(ins) {
+			return acc, true
 		}
 
 		nextAcc, jump := execute(ins[i], acc)
@@ -132,7 +224,6 @@ func execute(i *instruction, acc int) (nextAcc int, jump int) {
 	}
 }
 
-// func instructionFromString(line int, s string) *instruction {
 func instructionFromString(s string) *instruction {
 	parts := strings.Split(s, " ")
 	if len(parts) != 2 {
@@ -145,7 +236,6 @@ func instructionFromString(s string) *instruction {
 	}
 
 	return &instruction{
-		// line: line,
 		op:  parts[0],
 		arg: arg,
 	}
