@@ -65,6 +65,44 @@
 // first number in the list (after the preamble) which is not the sum of two of
 // the 25 numbers before it. What is the first number that does not have this
 // property?
+//
+// --- Part Two ---
+//
+// The final step in breaking the XMAS encryption relies on the invalid number
+// you just found: you must find a contiguous set of at least two numbers in
+// your list which sum to the invalid number from step 1.
+//
+// Again consider the above example:
+//
+// 35
+// 20
+// 15
+// 25
+// 47
+// 40
+// 62
+// 55
+// 65
+// 95
+// 102
+// 117
+// 150
+// 182
+// 127
+// 219
+// 299
+// 277
+// 309
+// 576
+//
+// In this list, adding up all of the numbers from 15 through 40 produces the
+// invalid number from step 1, 127. (Of course, the contiguous set of numbers in
+// your actual list might be much longer.)
+//
+// To find the encryption weakness, add together the smallest and largest number
+// in this contiguous range; in this example, these are 15 and 47, producing 62.
+//
+// What is the encryption weakness in your XMAS-encrypted list of numbers?
 
 package main
 
@@ -72,6 +110,7 @@ import (
 	"aoc2020/utils/fileinput"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 )
 
@@ -91,9 +130,11 @@ func main() {
 		panic(err)
 	}
 
-	numberWithoutAddends := part1(nums)
+	numberWithoutAddends := part1(nums)                                         // Answer: 18272118
+	sumOfSmallestLargesInContiguousAddends := part2(nums, numberWithoutAddends) // Answer: 2186361
 
 	fmt.Printf("First number without addends (part 1): %v\n", numberWithoutAddends)
+	fmt.Printf("Sum of smallest and largest in range of contiguous addends (part 2): %v\n", sumOfSmallestLargesInContiguousAddends)
 }
 
 func part1(nums []int) int {
@@ -110,6 +151,13 @@ func part1(nums []int) int {
 	panic("could not find number missing addends")
 }
 
+func part2(nums []int, sum int) int {
+	addends := contiguousAddendsForSum(nums, sum)
+	sort.Ints(addends)
+
+	return addends[0] + addends[len(addends)-1]
+}
+
 func addendsForSum(nums []int, sum int) ([2]int, error) {
 	for i, num1 := range nums {
 		for j, num2 := range nums {
@@ -124,4 +172,30 @@ func addendsForSum(nums []int, sum int) ([2]int, error) {
 	}
 
 	return [2]int{}, errors.New("no two working addends")
+}
+
+func contiguousAddendsForSum(nums []int, targetSum int) []int {
+	for i, startNum := range nums {
+		if startNum >= targetSum {
+			break
+		}
+
+		sum := startNum
+		addends := []int{startNum}
+
+		for _, nextNum := range nums[i+1:] {
+			if sum+nextNum > targetSum {
+				break
+			}
+
+			sum += nextNum
+			addends = append(addends, nextNum)
+
+			if sum == targetSum {
+				return addends
+			}
+		}
+	}
+
+	panic("could not find contiguous range of addends")
 }
