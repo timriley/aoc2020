@@ -166,7 +166,7 @@ fn parse_input(input: &str) -> (usize, Vec<usize>) {
         .parse().expect("not a valid integer");
 
     let services : Vec<usize> = lines.next().expect("no services found")
-        .split(",")
+        .split(',')
         .filter(|&s| s != "x")
         .map(|s| s.parse().expect("not a valid integer"))
         .collect();
@@ -174,7 +174,7 @@ fn parse_input(input: &str) -> (usize, Vec<usize>) {
     (earliest_departure, services)
 }
 
-fn next_service(earliest_departure: usize, services: &Vec<usize>) -> (usize, usize) {
+fn next_service(earliest_departure: usize, services: &[usize]) -> (usize, usize) {
     let next_departures = services.iter().map(|n| {
         let departure = (1..).find_map(|i| {
             let timestamp = i * n;
@@ -211,6 +211,6 @@ mod tests {
         let earliest_departure = 939;
         let services = vec![7,13,59,31,19];
 
-        assert_eq!(next_service(earliest_departure, services), (59, 944));
+        assert_eq!(next_service(earliest_departure, &services), (59, 944));
     }
 }
