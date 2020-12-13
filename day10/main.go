@@ -113,12 +113,79 @@
 // your device's built-in adapter and count the joltage differences between the
 // charging outlet, the adapters, and your device. What is the number of 1-jolt
 // differences multiplied by the number of 3-jolt differences?
+//
+// --- Part Two ---
+//
+// To completely determine whether you have enough adapters, you'll need to
+// figure out how many different ways they can be arranged. Every arrangement
+// needs to connect the charging outlet to your device. The previous rules about
+// when adapters can successfully connect still apply.
+//
+// The first example above (the one that starts with 16, 10, 15) supports the
+// following arrangements:
+//
+// (0), 1, 4, 5, 6, 7, 10, 11, 12, 15, 16, 19, (22)
+// (0), 1, 4, 5, 6, 7, 10, 12, 15, 16, 19, (22)
+// (0), 1, 4, 5, 7, 10, 11, 12, 15, 16, 19, (22)
+// (0), 1, 4, 5, 7, 10, 12, 15, 16, 19, (22)
+// (0), 1, 4, 6, 7, 10, 11, 12, 15, 16, 19, (22)
+// (0), 1, 4, 6, 7, 10, 12, 15, 16, 19, (22)
+// (0), 1, 4, 7, 10, 11, 12, 15, 16, 19, (22)
+// (0), 1, 4, 7, 10, 12, 15, 16, 19, (22)
+//
+// (The charging outlet and your device's built-in adapter are shown in
+// parentheses.) Given the adapters from the first example, the total number of
+// arrangements that connect the charging outlet to your device is 8.
+//
+// The second example above (the one that starts with 28, 33, 18) has many
+// arrangements. Here are a few:
+//
+// (0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+// 32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 48, 49, (52)
+//
+// (0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+// 32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 49, (52)
+//
+// (0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+// 32, 33, 34, 35, 38, 39, 42, 45, 46, 48, 49, (52)
+//
+// (0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+// 32, 33, 34, 35, 38, 39, 42, 45, 46, 49, (52)
+//
+// (0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31,
+// 32, 33, 34, 35, 38, 39, 42, 45, 47, 48, 49, (52)
+//
+// (0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+// 46, 48, 49, (52)
+//
+// (0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+// 46, 49, (52)
+//
+// (0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+// 47, 48, 49, (52)
+//
+// (0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+// 47, 49, (52)
+//
+// (0), 3, 4, 7, 10, 11, 14, 17, 20, 23, 25, 28, 31, 34, 35, 38, 39, 42, 45,
+// 48, 49, (52)
+//
+// In total, this set of adapters can connect the charging outlet to your device
+// in 19208 distinct arrangements.
+//
+// You glance back down at your bag and try to remember why you brought so many
+// adapters; there must be more than a trillion valid ways to arrange them!
+// Surely, there must be an efficient way to count the arrangements.
+//
+// What is the total number of distinct ways you can arrange the adapters to
+// connect the charging outlet to your device?
 
 package main
 
 import (
 	"aoc2020/utils/fileinput"
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 )
@@ -137,15 +204,21 @@ func main() {
 		panic(err)
 	}
 
-	multipliedDiffs := part1(adapters)
+	multipliedDiffs := part1(adapters)     // 2080
+	numberOfCobinations := part2(adapters) // 6908379398144
 
-	fmt.Printf("Noumber of 1-jolt diffs * number of 3-jolt diffs (part 1): %v\n", multipliedDiffs)
+	fmt.Printf("Number of 1-jolt diffs * number of 3-jolt diffs (part 1): %v\n", multipliedDiffs)
+	fmt.Printf("Number of possible combinations (part 2): %v\n", numberOfCobinations)
 }
 
 func part1(adapters []int) int {
 	diffs := joltageDifferences(adapters)
 
 	return diffs[1] * diffs[3]
+}
+
+func part2(adapters []int) int {
+	return arrangementCount(adapters)
 }
 
 func joltageDifferences(adapters []int) map[int]int {
@@ -170,4 +243,66 @@ func joltageDifferences(adapters []int) map[int]int {
 	joltage += 3
 
 	return diffs
+}
+
+var combinationsForGroupSize = map[int]int{
+	1: 1,
+	2: 1,
+	3: 2,
+	4: 4,
+	5: 7,
+}
+
+func arrangementCount(adapters []int) int {
+	// Sort the adapters, and include the source joltage (0), which is needed to
+	// properly determining all combinations
+	adapters = append(adapters, 0)
+	sort.Ints(adapters)
+
+	// Calculate differences between each adapter in the sorted list
+	var deltas []int
+	for i, adapter := range adapters {
+		if i == len(adapters)-1 {
+			continue
+		}
+
+		deltas = append(deltas, adapters[i+1]-adapter)
+	}
+
+	// Reduce into sizes of groups of 1-jolt differences (representing branching
+	// paths for possible arrangements)
+	var branchGroupSizes []int
+	size := 0
+	for i, delta := range deltas {
+		if delta != 1 && delta != 3 {
+			log.Panicf("unknown delta %v", delta)
+		}
+
+		if delta == 1 {
+			size++
+		}
+
+		// A delta of 3 (or the last delta in the slice) is a boundary, so capture the
+		// current group size, then reset it
+		if delta == 3 || i == len(deltas)-1 {
+			size++
+			branchGroupSizes = append(branchGroupSizes, size)
+			size = 0
+		}
+	}
+
+	// Each branch group adds a particular number of combinations based on its size
+	// (see combinationsForGroupSize above). Use this to determine the overall
+	// number of possible adapter arrangements
+	arrangements := 1
+	for _, size := range branchGroupSizes {
+		combination, ok := combinationsForGroupSize[size]
+		if !ok {
+			log.Panicf("No combination for group size %v", size)
+		}
+
+		arrangements *= combination
+	}
+
+	return arrangements
 }
