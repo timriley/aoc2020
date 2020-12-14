@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -42,4 +44,71 @@ func Test_room_neighbours(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_room_iterate(t *testing.T) {
+	stages := [][][]string{
+		[][]string{
+			[]string{"L", ".", "L", "L", ".", "L", "L", ".", "L", "L"},
+			[]string{"L", "L", "L", "L", "L", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", ".", "L", ".", ".", "L", ".", "."},
+			[]string{"L", "L", "L", "L", ".", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", "L", ".", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", "L", "L", "L", "L", ".", "L", "L"},
+			[]string{".", ".", "L", ".", "L", ".", ".", ".", ".", "."},
+			[]string{"L", "L", "L", "L", "L", "L", "L", "L", "L", "L"},
+			[]string{"L", ".", "L", "L", "L", "L", "L", "L", ".", "L"},
+			[]string{"L", ".", "L", "L", "L", "L", "L", ".", "L", "L"},
+		},
+		[][]string{
+			[]string{"#", ".", "#", "#", ".", "#", "#", ".", "#", "#"},
+			[]string{"#", "#", "#", "#", "#", "#", "#", ".", "#", "#"},
+			[]string{"#", ".", "#", ".", "#", ".", ".", "#", ".", "."},
+			[]string{"#", "#", "#", "#", ".", "#", "#", ".", "#", "#"},
+			[]string{"#", ".", "#", "#", ".", "#", "#", ".", "#", "#"},
+			[]string{"#", ".", "#", "#", "#", "#", "#", ".", "#", "#"},
+			[]string{".", ".", "#", ".", "#", ".", ".", ".", ".", "."},
+			[]string{"#", "#", "#", "#", "#", "#", "#", "#", "#", "#"},
+			[]string{"#", ".", "#", "#", "#", "#", "#", "#", ".", "#"},
+			[]string{"#", ".", "#", "#", "#", "#", "#", ".", "#", "#"},
+		},
+		[][]string{
+			[]string{"#", ".", "L", "L", ".", "L", "L", ".", "L", "#"},
+			[]string{"#", "L", "L", "L", "L", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", ".", "L", ".", ".", "L", ".", "."},
+			[]string{"L", "L", "L", "L", ".", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", "L", ".", "L", "L", ".", "L", "L"},
+			[]string{"L", ".", "L", "L", "L", "L", "L", ".", "L", "L"},
+			[]string{".", ".", "L", ".", "L", ".", ".", ".", ".", "."},
+			[]string{"L", "L", "L", "L", "L", "L", "L", "L", "L", "#"},
+			[]string{"#", ".", "L", "L", "L", "L", "L", "L", ".", "L"},
+			[]string{"#", ".", "L", "L", "L", "L", "L", ".", "L", "#"},
+		},
+	}
+
+	for i, start := range stages {
+		if i+1 >= len(stages) {
+			continue
+		}
+
+		next := stages[i+1]
+
+		t.Run(fmt.Sprintf("Stage %v->%v", i, i+1), func(t *testing.T) {
+			r := &room{cells: start}
+
+			if got := r.iterate(r.visible, 5).cells; !reflect.DeepEqual(got, next) {
+				t.Errorf("iterate() = \n\n%v\n\nwant:\n\n%v", cellsToStr(got), cellsToStr(next))
+			}
+		})
+	}
+}
+
+func cellsToStr(cells [][]string) string {
+	out := ""
+
+	for _, row := range cells {
+		out = out + strings.Join(row, "") + "\n"
+	}
+
+	return out
 }

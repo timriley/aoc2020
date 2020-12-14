@@ -106,6 +106,135 @@
 //
 // Simulate your seating area by applying the seating rules repeatedly until no
 // seats change state. How many seats end up occupied?
+//
+// --- Part Two ---
+//
+// As soon as people start to arrive, you realize your mistake. People don't
+// just care about adjacent seats - they care about the first seat they can see
+// in each of those eight directions!
+//
+// Now, instead of considering just the eight immediately adjacent seats,
+// consider the first seat in each of those eight directions. For example, the
+// empty seat below would see eight occupied seats:
+//
+// .......#.
+// ...#.....
+// .#.......
+// .........
+// ..#L....#
+// ....#....
+// .........
+// #........
+// ...#.....
+//
+// The leftmost empty seat below would only see one empty seat, but cannot see
+// any of the occupied ones:
+//
+// .............
+// .L.L.#.#.#.#.
+// .............
+//
+// The empty seat below would see no occupied seats:
+//
+// .##.##.
+// #.#.#.#
+// ##...##
+// ...L...
+// ##...##
+// #.#.#.#
+// .##.##.
+//
+// Also, people seem to be more tolerant than you expected: it now takes five or
+// more visible occupied seats for an occupied seat to become empty (rather than
+// four or more from the previous rules). The other rules still apply: empty
+// seats that see no occupied seats become occupied, seats matching no rule
+// don't change, and floor never changes.
+//
+// Given the same starting layout as above, these new rules cause the seating
+// area to shift around as follows:
+//
+// L.LL.LL.LL
+// LLLLLLL.LL
+// L.L.L..L..
+// LLLL.LL.LL
+// L.LL.LL.LL
+// L.LLLLL.LL
+// ..L.L.....
+// LLLLLLLLLL
+// L.LLLLLL.L
+// L.LLLLL.LL
+//
+// #.##.##.##
+// #######.##
+// #.#.#..#..
+// ####.##.##
+// #.##.##.##
+// #.#####.##
+// ..#.#.....
+// ##########
+// #.######.#
+// #.#####.##
+//
+// #.LL.LL.L#
+// #LLLLLL.LL
+// L.L.L..L..
+// LLLL.LL.LL
+// L.LL.LL.LL
+// L.LLLLL.LL
+// ..L.L.....
+// LLLLLLLLL#
+// #.LLLLLL.L
+// #.LLLLL.L#
+//
+// #.L#.##.L#
+// #L#####.LL
+// L.#.#..#..
+// ##L#.##.##
+// #.##.#L.##
+// #.#####.#L
+// ..#.#.....
+// LLL####LL#
+// #.L#####.L
+// #.L####.L#
+//
+// #.L#.L#.L#
+// #LLLLLL.LL
+// L.L.L..#..
+// ##LL.LL.L#
+// L.LL.LL.L#
+// #.LLLLL.LL
+// ..L.L.....
+// LLLLLLLLL#
+// #.LLLLL#.L
+// #.L#LL#.L#
+//
+// #.L#.L#.L#
+// #LLLLLL.LL
+// L.L.L..#..
+// ##L#.#L.L#
+// L.L#.#L.L#
+// #.L####.LL
+// ..#.#.....
+// LLL###LLL#
+// #.LLLLL#.L
+// #.L#LL#.L#
+//
+// #.L#.L#.L#
+// #LLLLLL.LL
+// L.L.L..#..
+// ##L#.#L.L#
+// L.L#.LL.L#
+// #.LLLL#.LL
+// ..#.L.....
+// LLL###LLL#
+// #.LLLLL#.L
+// #.L#LL#.L#
+//
+// Again, at this point, people stop shifting around and the seating area
+// reaches equilibrium. Once this occurs, you count 26 occupied seats.
+//
+// Given the new visibility method and the rule change for occupied seats
+// becoming empty, once equilibrium is reached, how many seats end up occupied?
 
 package main
 
@@ -136,16 +265,32 @@ func main() {
 
 	r := newRoom(positions)
 
-	res := part1(r)
+	part1Visible := part1(r) // 2283
+	part2Visible := part2(r) // 2054
 
-	fmt.Println(res) // 2283
+	fmt.Printf("Visible (part 1): %v\n", part1Visible)
+	fmt.Printf("Visible (part 2): %v\n", part2Visible)
 }
 
 func part1(r *room) int {
 	occupiedCount := r.occupiedCount()
 
 	for {
-		r = r.iterate()
+		r = r.iterate(r.neighbours, 4)
+
+		if occupiedCount == r.occupiedCount() {
+			return occupiedCount
+		}
+
+		occupiedCount = r.occupiedCount()
+	}
+}
+
+func part2(r *room) int {
+	occupiedCount := r.occupiedCount()
+
+	for {
+		r = r.iterate(r.visible, 5)
 
 		if occupiedCount == r.occupiedCount() {
 			return occupiedCount
@@ -159,7 +304,7 @@ func newRoom(cells [][]string) *room {
 	return &room{cells}
 }
 
-func (r *room) iterate() *room {
+func (r *room) iterate(finder func(x, y int) []string, occupiedMin int) *room {
 	newCells := [][]string{}
 	for _, row := range r.cells {
 		newCells = append(newCells, make([]string, len(row)))
@@ -168,7 +313,7 @@ func (r *room) iterate() *room {
 	for x, row := range r.cells {
 		for y, cell := range row {
 			occupied := 0
-			for _, n := range r.neighbours(x, y) {
+			for _, n := range finder(x, y) {
 				if n == "#" {
 					occupied++
 				}
@@ -182,9 +327,9 @@ func (r *room) iterate() *room {
 				newCell = "#"
 			}
 
-			// If a seat is occupied (#) and four or more seats adjacent to it are also
-			// occupied, the seat becomes empty
-			if cell == "#" && occupied >= 4 {
+			// If a seat is occupied (#) and [occupidMin] or more seats adjacent to it are
+			// also occupied, the seat becomes empty
+			if cell == "#" && occupied >= occupiedMin {
 				newCell = "L"
 			}
 
@@ -229,4 +374,69 @@ func (r *room) neighbours(x, y int) []string {
 	}
 
 	return neighbours
+}
+
+func (r *room) visible(x, y int) []string {
+	finders := []func(x, y int) (int, int){
+		// straight right
+		func(x, y int) (int, int) {
+			return x, y + 1
+		},
+		// diagonal down and to the right
+		func(x, y int) (int, int) {
+			return x + 1, y + 1
+		},
+		// straight down
+		func(x, y int) (int, int) {
+			return x + 1, y
+		},
+		// diagonal down and to the left
+		func(x, y int) (int, int) {
+			return x + 1, y - 1
+		},
+		// straight left
+		func(x, y int) (int, int) {
+			return x, y - 1
+		},
+		// diagonal up and to the left
+		func(x, y int) (int, int) {
+			return x - 1, y - 1
+		},
+		// straight up
+		func(x, y int) (int, int) {
+			return x - 1, y
+		},
+		// diagonal up and to the right
+		func(x, y int) (int, int) {
+			return x - 1, y + 1
+		},
+	}
+
+	visible := []string{}
+	for _, f := range finders {
+		findX, findY := x, y
+		for {
+			findX, findY = f(findX, findY)
+
+			if findX < 0 || findX >= len(r.cells) {
+				break
+			}
+
+			row := r.cells[findX]
+
+			if findY < 0 || findY >= len(row) {
+				break
+			}
+
+			cell := row[findY]
+
+			if cell == "." {
+				continue
+			}
+
+			visible = append(visible, cell)
+			break
+		}
+	}
+	return visible
 }
